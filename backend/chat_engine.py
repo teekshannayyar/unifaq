@@ -14,7 +14,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from azure.identity import DefaultAzureCredential
+from azure.core.credentials import AzureKeyCredential
 from azure.ai.projects import AIProjectClient
 
 load_dotenv()
@@ -33,9 +33,10 @@ class ChitkaraAssistant:
     def __init__(self) -> None:
         if not PROJECT_ENDPOINT:
             raise RuntimeError("FOUNDRY_PROJECT_ENDPOINT is not set.")
-        # Locally this uses your `az login`. On Render it uses the
-        # AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET env vars.
-        self._credential = DefaultAzureCredential()
+        api_key = os.getenv("AZURE_API_KEY")
+        if not api_key:
+            raise RuntimeError("AZURE_API_KEY is not set.")
+        self._credential = AzureKeyCredential(api_key)
         self._project = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=self._credential)
         self._openai = self._project.get_openai_client()
 
