@@ -13,9 +13,8 @@ import json
 import logging
 import os
 
+import openai
 from dotenv import load_dotenv
-from azure.core.credentials import AzureKeyCredential
-from azure.ai.projects import AIProjectClient
 
 load_dotenv()
 
@@ -36,9 +35,14 @@ class ChitkaraAssistant:
         api_key = os.getenv("AZURE_API_KEY")
         if not api_key:
             raise RuntimeError("AZURE_API_KEY is not set.")
-        self._credential = AzureKeyCredential(api_key)
-        self._project = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=self._credential)
-        self._openai = self._project.get_openai_client()
+        # Bypass AIProjectClient — create the OpenAI client directly against
+        # the Azure AI Foundry REST endpoint, authenticating with the API key.
+        base_url = PROJECT_ENDPOINT.rstrip("/") + "/openai/v1/"
+        self._openai = openai.OpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            default_headers={"api-key": api_key},
+        )
 
     @staticmethod
     def _agent(name: str) -> dict:
